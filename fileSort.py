@@ -4,19 +4,34 @@
 
 import ConfigParser,mimetypes
 import sys,os
+
 #############
 # Functions #
 #############
 
+#- Utilities -#
+
+def verbose_a(action,f,place=''):
+	if VV:
+		sent=action+' '+f
+		if place: sent+=' to '+place
+		print "    "+sent
+
+def s_info(**kwargs):
+	for name,attr in kwargs.iteritems():
+		print '\n	',name.capitalize()+':',attr
+	return ' '
+
 #- Applied functions -#
 def move(f,place):
-	print 'moving',f,'to',place
+	verbose_a('moving',f,place)
 
 def copy(f,place):
-	print 'copying',f,'to',place
+	verbose_a('copying',f,place)
 
 def delete(f,place):
-	print 'deleting',f
+	verbose_a('deleting',f)
+	os.remove(f)
 
 FUNCTIONS={'':move,'!':delete,':':copy}
 
@@ -50,9 +65,10 @@ PATTERNS={'is':IS,'is_not':IS_NOT,'contains':CONTAINS,'contains_not':CONTAINS_NO
 ################
 
 if __name__!="__main__":
-	raise
+	sys.exit()
 
 mimetypes.init()
+VV=True
 
 if (len(sys.argv)<2): raise(ValueError("Enter Config Path !"))
 
@@ -61,24 +77,48 @@ try:
 	parser.read(sys.argv[1])
 except:
 	print "Your config file is strange"
-	raise
+	sys.exit()
 
 for section in parser.sections():
+	if VV: print "Working in", section
+	try: files=os.listdir(section)
+	except OSError:
+		print "The path you provided is incorrect:",s_info(section=section)
+		continue
+	
+
 	for element,action in parser.items(section):
-		files=os.listdir(section)
+		try:
+			seeked,value=element.split('.')
+			value=value.split('(')
+			pattern=value[0]
+			value=value[1][:-1]
+			
+			seek=PATTERNS[pattern]
+			infos=INFOS[seeked]
+		except KeyError: 
+			sys.stderr.write("Warnning: "+str(sys.exc_info()[1])+" is not a valable name (skipped)\n")
+			continue
+		except ValueError,IndexError:
+			sys.stderr.write("Warnning: Malformed config file ({}) (skipped)\n".format(element))
+			continue
+		except:
+			print "Unexpected error", sys.exc_info()[0]
+			sys.exit()
 		
-		seeked,value=element.split('.')
-		value=value.split('(')
-		pattern=value[0]
-		value=value[1][:-1]
-
-#		print seeked,pattern,value
-
+		#if seeked not in INFOS:	
+		#	print "Warnning: {} is not an implemented attribute (skip) (section:{})".format(seeked,section)
+		#	continue
+		
 		t_action=action[:1]
 		if (t_action==":" or t_action=="!"): action = action[1:]
 		else: t_action=''
 		
+		
 		for f in files:
-#			print str((INFOS[seeked](section+'/'+f))[0]),f
-			if PATTERNS[pattern](value,str((INFOS[seeked](section+'/'+f))[0])):
-				FUNCTIONS[t_action](f,action)
+			try:
+				if seek(value.lower(),str(infos(section+'/'+f)[0]).lower()):
+					FUNCTIONS[t_action](f,action)
+			except:
+				print "Unexpected error:", sys.exc_info(), sys.exit()
+    			
