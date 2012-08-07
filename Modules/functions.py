@@ -52,7 +52,6 @@ def s_info(**kwargs):
 #---------------------#
 
 def relink(f,place,folder,function):
-	verbose_a('copying',f,place)
 	place,src,dest=a_dirs(folder,place),a_dirs(folder,f),a_dirs(a_dirs(folder,place),NAME(f))
 	if os.path.exists(dest) and not OVERWRITE: 
 		print "    Destination file exist (skipped)"
@@ -66,9 +65,11 @@ def relink(f,place,folder,function):
 	except: print "Moving Failed",sys.exc_info()[1]
 
 def move(f,place,section):
-	relink(f,place,section,shutil.copy2)
+	verbose_a('moving',f,place)
+	relink(f,place,section,shutil.move)
 
 def copy(f,place,section):
+	verbose_a('copying',f,place)
 	relink(f,place,section,shutil.copy2)
 
 def delete(f,place,section):

@@ -36,8 +36,10 @@ import sys,os,shutil
 
 #------ Ajouts ------#
 #sys.path.append('Modules')
-#from functions import exec_conf
-execfile('Modules/functions.py')
+#from functions import *
+CURRENT_DIR=os.path.dirname(os.path.abspath(__file__))
+execfile(os.path.join(CURRENT_DIR,'Modules/functions.py'))
+
 ######################
 #     Functions      #
 ######################
@@ -88,7 +90,6 @@ def exec_conf(config):
 			t_action=action[:1]
 			if (t_action==":" or t_action=="!"): action = action[1:]
 			else: t_action=''
-		
 		
 			for f in files:
 				try:
