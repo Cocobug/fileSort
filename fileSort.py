@@ -45,21 +45,6 @@ execfile('Modules/functions.py')
 FUNCTIONS={'':move,'!':delete,':':copy}
 
 INFOS={'type':TYPE,'name':NAME}
-##########################
-#--- Pattern Functions --#
-#------------------------#
-
-def IS(a,b):
-	return a==b
-
-def IS_NOT(a,b):
-	return not IS(a,b)
-
-def CONTAINS(a,b):
-	return a in b
-
-def CONTAINS_NOT(a,b):
-	return not CONTAINS(a,b)
 
 PATTERNS={'is':IS,'is_not':IS_NOT,'contains':CONTAINS,'contains_not':CONTAINS_NOT}
 
@@ -81,6 +66,7 @@ def exec_conf(config):
 	
 
 		for element,action in parser.items(section):
+
 			try:
 				seeked,value=element.split('.')
 				value=value.split('(')
@@ -98,7 +84,7 @@ def exec_conf(config):
 			except:
 				print "Unexpected error", sys.exc_info()
 				sys.exit()
-		
+
 			t_action=action[:1]
 			if (t_action==":" or t_action=="!"): action = action[1:]
 			else: t_action=''
@@ -106,7 +92,7 @@ def exec_conf(config):
 		
 			for f in files:
 				try:
-					if seek(value.lower(),str(infos(a_dirs(section,f))[0]).lower()):
+					if seek(value.lower(),str(infos(a_dirs(section,f))).lower()):
 						FUNCTIONS[t_action](f,action,section)
 				except:
 					print "Unexpected error:", sys.exc_info(), sys.exit()

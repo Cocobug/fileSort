@@ -78,6 +78,22 @@ def delete(f,place,section):
 	except: print "Removing Failed", sys.exc_info()[1]
 
 ##########################
+#--- Pattern Functions --#
+#------------------------#
+
+def IS(a,b):
+	return a==b
+
+def IS_NOT(a,b):
+	return not IS(a,b)
+
+def CONTAINS(a,b):
+	return a in b
+
+def CONTAINS_NOT(a,b):
+	return not CONTAINS(a,b)
+
+##########################
 #- Recognition funtions -#
 #------------------------#
 
