@@ -1,72 +1,53 @@
-# Moooo
-# Stuff
+# -*- coding:utf8 -*-
 
+###########################################
+# Date: 2012                              #
+# Auteur: Malphaet                        #
+# Nom: fileSort                           #
+# Version: 0.1a                           #
+# Copyright 2011: Malphaet                #
+###########################################
+# This file is part of fileSort.
+#
+# fileSort is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# fileSort is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with fileSort. If not, see <http://www.gnu.org/licenses/>.
+########################################################
+# LICENCE                                              #
+########################################################
+
+######################
+#----- Modules ------#
+######################
+
+#---- Importation ---#
 
 import ConfigParser,mimetypes,argparse
 import sys,os,shutil
 
-#############
-# Functions #
-#############
-
-#- Utilities -#
-
-def a_dirs(a,b):
-	if a[-1]!='/': a=a+'/'
-	if b.strip()[:2]=='./': b=b[3:]
-	return a+b
-
-def verbose_a(action,f,place=''):
-	if VV:
-		sent=action+' '+f
-		if place: sent+=' to '+place
-		print " -> "+sent.capitalize()
-
-def s_info(**kwargs):
-	for name,attr in kwargs.iteritems():
-		print '\n	',name.capitalize()+':',attr
-	return ' '
-
-#- Applied functions -#
-
-def relink(f,place,folder,function):
-	verbose_a('copying',f,place)
-	place,src,dest=a_dirs(section,place),a_dirs(section,f),a_dirs(a_dirs(section,place),NAME(f))
-	if os.path.exists(dest) and not OVERWRITE: 
-		print "    Destination file exist (skipped)"
-		return
-	try:
-		os.makedirs(place)
-		print "Creating",place
-	except: pass
-	try:
-		function(src,dest)
-	except: print "Moving Failed",sys.exc_info()
-
-def move(f,place,section):
-	relink(f,place,section,shutil.copy2)
-
-def copy(f,place,section):
-	relink(f,place,section,shutil.copy2)
-
-def delete(f,place,section):
-	verbose_a('deleting',f)
-	try:
-		os.remove(a_dirs(section,f))
-	except: "Removing Failed", sys.exc_info()[1]
+#------ Ajouts ------#
+#sys.path.append('Modules')
+#from functions import exec_conf
+execfile('Modules/functions.py')
+######################
+#     Functions      #
+######################
 
 FUNCTIONS={'':move,'!':delete,':':copy}
 
-#- Recognition funtions -#
-
-def TYPE(f):
-	return mimetypes.guess_type(f)
-def NAME(f):
-	return f.split('/')[-1]
-
 INFOS={'type':TYPE,'name':NAME}
-
-#- Pattern Functions -#
+##########################
+#--- Pattern Functions --#
+#------------------------#
 
 def IS(a,b):
 	return a==b
@@ -82,14 +63,66 @@ def CONTAINS_NOT(a,b):
 
 PATTERNS={'is':IS,'is_not':IS_NOT,'contains':CONTAINS,'contains_not':CONTAINS_NOT}
 
-################
-# Main Program #
-################
 
-if __name__!="__main__":
-	sys.exit()
+def exec_conf(config):
+	try:
+		parser=ConfigParser.SafeConfigParser()
+		parser.read(config)
+	except:
+		print "Your config file is weird",config
+		return
+
+	for section in parser.sections():
+		if VV: print "Working in", section
+		try: files=os.listdir(section)
+		except OSError:
+			print "The path you provided is incorrect:",s_info(section=section)
+			continue
+	
+
+		for element,action in parser.items(section):
+			try:
+				seeked,value=element.split('.')
+				value=value.split('(')
+				pattern=value[0]
+				value=value[1].strip()[:-1]
+			
+				seek=PATTERNS[pattern]
+				infos=INFOS[seeked]
+			except KeyError: 
+				sys.stderr.write("Warnning: "+str(sys.exc_info()[1])+" is not a correct name (skipped)\n")
+				continue
+			except (ValueError, IndexError):
+				sys.stderr.write("Warnning: Malformed config file (-> {}) (skipped)\n".format(element))
+				continue
+			except:
+				print "Unexpected error", sys.exc_info()
+				sys.exit()
+		
+			t_action=action[:1]
+			if (t_action==":" or t_action=="!"): action = action[1:]
+			else: t_action=''
+		
+		
+			for f in files:
+				try:
+					if seek(value.lower(),str(infos(a_dirs(section,f))[0]).lower()):
+						FUNCTIONS[t_action](f,action,section)
+				except:
+					print "Unexpected error:", sys.exc_info(), sys.exit()
+
+#######################
+#---- Main Program ---#
+#######################
+
+#######################
+#------- Init --------#
+#---------------------#
 
 mimetypes.init()
+
+#---------------------#
+#------ Parser -------#
 
 parser=argparse.ArgumentParser(description="Read a config file and apply it's rules")
 parser.add_argument('conf', metavar='config', nargs='+', type=str,help='a config file to apply')
@@ -99,49 +132,6 @@ args = parser.parse_args()
 
 VV,OVERWRITE,conf=args.VV,args.OVERWRITE,args.conf
 
-try:
-	parser=ConfigParser.SafeConfigParser()
-	parser.read(sys.argv[1])
-except:
-	print "Your config file is strange"
-	sys.exit()
-
-for section in parser.sections():
-	if VV: print "Working in", section
-	try: files=os.listdir(section)
-	except OSError:
-		print "The path you provided is incorrect:",s_info(section=section)
-		continue
-	
-
-	for element,action in parser.items(section):
-		try:
-			seeked,value=element.split('.')
-			value=value.split('(')
-			pattern=value[0]
-			value=value[1].strip()[:-1]
-			
-			seek=PATTERNS[pattern]
-			infos=INFOS[seeked]
-		except KeyError: 
-			sys.stderr.write("Warnning: "+str(sys.exc_info()[1])+" is not a correct name (skipped)\n")
-			continue
-		except (ValueError, IndexError):
-			sys.stderr.write("Warnning: Malformed config file (-> {}) (skipped)\n".format(element))
-			continue
-		except:
-			print "Unexpected error", sys.exc_info()
-			sys.exit()
-		
-		t_action=action[:1]
-		if (t_action==":" or t_action=="!"): action = action[1:]
-		else: t_action=''
-		
-		
-		for f in files:
-			try:
-				if seek(value.lower(),str(infos(a_dirs(section,f))[0]).lower()):
-					FUNCTIONS[t_action](f,action,section)
-			except:
-				print "Unexpected error:", sys.exc_info(), sys.exit()
-    			
+for config in conf:
+	exec_conf(config)
+					
