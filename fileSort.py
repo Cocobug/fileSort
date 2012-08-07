@@ -2,8 +2,8 @@
 # Stuff
 
 
-import ConfigParser,mimetypes
-import sys,os
+import ConfigParser,mimetypes,argparse
+import sys,os,shutil
 
 #############
 # Functions #
@@ -11,11 +11,16 @@ import sys,os
 
 #- Utilities -#
 
+def a_dirs(a,b):
+	if a[-1]!='/': a=a+'/'
+	if b.strip()[:2]=='./': b=b[3:]
+	return a+b
+
 def verbose_a(action,f,place=''):
 	if VV:
 		sent=action+' '+f
 		if place: sent+=' to '+place
-		print "    "+sent
+		print " -> "+sent.capitalize()
 
 def s_info(**kwargs):
 	for name,attr in kwargs.iteritems():
@@ -23,15 +28,32 @@ def s_info(**kwargs):
 	return ' '
 
 #- Applied functions -#
-def move(f,place):
-	verbose_a('moving',f,place)
 
-def copy(f,place):
+def relink(f,place,folder,function):
 	verbose_a('copying',f,place)
+	place,src,dest=a_dirs(section,place),a_dirs(section,f),a_dirs(a_dirs(section,place),NAME(f))
+	if os.path.exists(dest) and not OVERWRITE: 
+		print "    Destination file exist (skipped)"
+		return
+	try:
+		os.makedirs(place)
+		print "Creating",place
+	except: pass
+	try:
+		function(src,dest)
+	except: print "Moving Failed",sys.exc_info()
 
-def delete(f,place):
+def move(f,place,section):
+	relink(f,place,section,shutil.copy2)
+
+def copy(f,place,section):
+	relink(f,place,section,shutil.copy2)
+
+def delete(f,place,section):
 	verbose_a('deleting',f)
-	os.remove(f)
+	try:
+		os.remove(a_dirs(section,f))
+	except: "Removing Failed", sys.exc_info()[1]
 
 FUNCTIONS={'':move,'!':delete,':':copy}
 
@@ -68,9 +90,14 @@ if __name__!="__main__":
 	sys.exit()
 
 mimetypes.init()
-VV=True
 
-if (len(sys.argv)<2): raise(ValueError("Enter Config Path !"))
+parser=argparse.ArgumentParser(description="Read a config file and apply it's rules")
+parser.add_argument('conf', metavar='config', nargs='+', type=str,help='a config file to apply')
+parser.add_argument('-v','--verbose', dest='VV', action='store_const', const=True, help='be verbose')
+parser.add_argument('-f','--force', dest='OVERWRITE', action='store_const', const=True, default=False, help='overwrite destination data')
+args = parser.parse_args()
+
+VV,OVERWRITE,conf=args.VV,args.OVERWRITE,args.conf
 
 try:
 	parser=ConfigParser.SafeConfigParser()
@@ -92,23 +119,19 @@ for section in parser.sections():
 			seeked,value=element.split('.')
 			value=value.split('(')
 			pattern=value[0]
-			value=value[1][:-1]
+			value=value[1].strip()[:-1]
 			
 			seek=PATTERNS[pattern]
 			infos=INFOS[seeked]
 		except KeyError: 
-			sys.stderr.write("Warnning: "+str(sys.exc_info()[1])+" is not a valable name (skipped)\n")
+			sys.stderr.write("Warnning: "+str(sys.exc_info()[1])+" is not a correct name (skipped)\n")
 			continue
-		except ValueError,IndexError:
-			sys.stderr.write("Warnning: Malformed config file ({}) (skipped)\n".format(element))
+		except (ValueError, IndexError):
+			sys.stderr.write("Warnning: Malformed config file (-> {}) (skipped)\n".format(element))
 			continue
 		except:
-			print "Unexpected error", sys.exc_info()[0]
+			print "Unexpected error", sys.exc_info()
 			sys.exit()
-		
-		#if seeked not in INFOS:	
-		#	print "Warnning: {} is not an implemented attribute (skip) (section:{})".format(seeked,section)
-		#	continue
 		
 		t_action=action[:1]
 		if (t_action==":" or t_action=="!"): action = action[1:]
@@ -117,8 +140,8 @@ for section in parser.sections():
 		
 		for f in files:
 			try:
-				if seek(value.lower(),str(infos(section+'/'+f)[0]).lower()):
-					FUNCTIONS[t_action](f,action)
+				if seek(value.lower(),str(infos(a_dirs(section,f))[0]).lower()):
+					FUNCTIONS[t_action](f,action,section)
 			except:
 				print "Unexpected error:", sys.exc_info(), sys.exit()
     			
