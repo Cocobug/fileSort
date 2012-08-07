@@ -46,9 +46,12 @@ execfile(os.path.join(CURRENT_DIR,'Modules/functions.py'))
 
 FUNCTIONS={'':move,'!':delete,':':copy}
 
-INFOS={'type':TYPE,'name':NAME}
+INFOS={'type':TYPE,'name':NAME,'size':SIZE,'extention':EXT,'ext':EXT}
 
-PATTERNS={'is':IS,'is_not':IS_NOT,'contains':CONTAINS,'contains_not':CONTAINS_NOT}
+PATTERNS={'is':IS,'is_not':IS_NOT,
+'contains':CONTAINS,'contains_not':CONTAINS_NOT,
+'starts':STARTS,'ends':ENDS,
+'more':MORE,'less':LESS}
 
 
 def exec_conf(config):
@@ -61,19 +64,16 @@ def exec_conf(config):
 
 	for section in parser.sections():
 		if VV: print "Working in", section
-		try: files=os.listdir(section)
-		except OSError:
-			print "The path you provided is incorrect:",s_info(section=section)
-			continue
-	
-
+		
 		for element,action in parser.items(section):
-
 			try:
-				seeked,value=element.split('.')
-				value=value.split('(')
-				pattern=value[0]
-				value=value[1].strip()[:-1]
+				files=os.listdir(section)
+				
+				splited=element.index('.')
+				seeked,value=element[:splited],element[splited+1:]
+				splitted=value.index('(')
+				pattern=value[:splitted]
+				value=value[splitted+1:].strip()[:-1]
 			
 				seek=PATTERNS[pattern]
 				infos=INFOS[seeked]
@@ -83,6 +83,9 @@ def exec_conf(config):
 			except (ValueError, IndexError):
 				sys.stderr.write("Warnning: Malformed config file (-> {}) (skipped)\n".format(element))
 				continue
+			except OSError:
+				print "The path you provided is incorrect:",s_info(section=section)
+				break
 			except:
 				print "Unexpected error", sys.exc_info()
 				sys.exit()
@@ -93,7 +96,7 @@ def exec_conf(config):
 		
 			for f in files:
 				try:
-					if seek(value.lower(),str(infos(a_dirs(section,f))).lower()):
+					if seek(value.lower(),str(infos(get_dir(f,section))).lower()):
 						FUNCTIONS[t_action](f,action,section)
 				except:
 					print "Unexpected error:", sys.exc_info(), sys.exit()

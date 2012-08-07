@@ -25,7 +25,6 @@
 # LICENCE                                              #
 ########################################################
 
-
 ######################
 #     Functions      #
 ######################
@@ -36,6 +35,14 @@
 def a_dirs(a,b):
 	return os.path.join(a.strip(),b.strip())
 
+def get_dir(a,b):
+	a=a.strip()
+	if a[0]=='~': return os.path.expanduser(a)
+	if a[0]=='/': return a
+	if a[:2]=='./': a=a[2:]
+	
+	return a_dirs(b,a)
+	
 def verbose_a(action,f,place=''):
 	if VV:
 		sent=action+' '+f
@@ -52,7 +59,8 @@ def s_info(**kwargs):
 #---------------------#
 
 def relink(f,place,folder,function):
-	place,src,dest=a_dirs(folder,place),a_dirs(folder,f),a_dirs(a_dirs(folder,place),NAME(f))
+	place=get_dir(place,folder)
+	src,dest=get_dir(f,folder),a_dirs(place,NAME(f))
 	if os.path.exists(dest) and not OVERWRITE: 
 		print "    Destination file exist (skipped)"
 		return
@@ -65,12 +73,12 @@ def relink(f,place,folder,function):
 	except: print "Moving Failed",sys.exc_info()[1]
 
 def move(f,place,section):
-	verbose_a('moving',f,place)
 	relink(f,place,section,shutil.move)
+	verbose_a('moving',f,place)
 
 def copy(f,place,section):
-	verbose_a('copying',f,place)
 	relink(f,place,section,shutil.copy2)
+	verbose_a('copying',f,place)
 
 def delete(f,place,section):
 	verbose_a('deleting',f)
@@ -94,6 +102,22 @@ def CONTAINS(a,b):
 def CONTAINS_NOT(a,b):
 	return not CONTAINS(a,b)
 
+def STARTS(a,b):
+	si=len(a)
+	if len(b)<si: return False
+	return b[:len(a)]==a
+
+def ENDS(a,b):
+	la,lb=len(a),len(b)
+	if lb<la: return False
+	return b[lb-la:]==a
+
+def MORE(a,b):
+	return a>b
+
+def LESS(a,b):
+	return not MORE(a,b)
+
 ##########################
 #- Recognition funtions -#
 #------------------------#
@@ -101,5 +125,8 @@ def CONTAINS_NOT(a,b):
 def TYPE(f):
 	return mimetypes.guess_type(f)
 def NAME(f):
-	return os.path.basename(f)	
-	
+	return os.path.basename(f)
+def EXT(f):
+	return os.path.splitext(f)[1]
+def SIZE(f):
+	return os.path.getsize(f)
