@@ -131,7 +131,7 @@ def LESS(a,b):
 #------------------------#
 
 def TYPE(f):
-	return mimetypes.guess_type(f)
+	return mimetypes.guess_type(f)[0]
 def NAME(f):
 	return os.path.basename(f)
 def EXT(f):
