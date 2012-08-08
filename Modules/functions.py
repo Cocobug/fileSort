@@ -1,10 +1,7 @@
 # -*- coding:utf8 -*-
 
 ###########################################
-# Date: 2012                              #
 # Auteur: Malphaet                        #
-# Nom: fileSort                           #
-# Version: 0.1a                           #
 # Copyright 2011: Malphaet                #
 ###########################################
 # This file is part of fileSort.
@@ -45,9 +42,9 @@ def get_dir(a,b):
 	
 def verbose_a(action,f,place=''):
 	if VV:
-		sent=action+' '+f
+		sent=action.capitalize()+' '+f
 		if place: sent+=' to '+place
-		print " -> "+sent.capitalize()
+		print " -> "+sent
 
 def s_info(**kwargs):
 	for name,attr in kwargs.iteritems():
@@ -86,6 +83,17 @@ def delete(f,place,section):
 		os.remove(a_dirs(section,f))
 	except: print "Removing Failed", sys.exc_info()[1]
 
+def guess_type(temp_infos,value):
+	if type(value)!=str: return value
+	if type(temp_infos)==str:
+		value,temp_infos=value.lower(),str(temp_infos).lower()
+	else:
+		if type(temp_infos)==int:
+			value=int(value)
+		else:
+			if type(temp_infos)==float:
+				value=time.mktime(time.strptime(value,"%d %m %y, %H %M %S"))
+	return value
 ##########################
 #--- Pattern Functions --#
 #------------------------#
@@ -113,7 +121,7 @@ def ENDS(a,b):
 	return b[lb-la:]==a
 
 def MORE(a,b):
-	return a>b
+	return a<=b
 
 def LESS(a,b):
 	return not MORE(a,b)
@@ -129,4 +137,6 @@ def NAME(f):
 def EXT(f):
 	return os.path.splitext(f)[1]
 def SIZE(f):
-	return os.path.getsize(f)
+	return int(os.path.getsize(f))
+def TIME(f):
+	return os.path.getctime(f)

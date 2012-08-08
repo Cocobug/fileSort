@@ -4,7 +4,7 @@
 # Date: 2012                              #
 # Auteur: Malphaet                        #
 # Nom: fileSort                           #
-# Version: 0.1a                           #
+# Version: 0.2a                           #
 # Copyright 2011: Malphaet                #
 ###########################################
 # This file is part of fileSort.
@@ -31,7 +31,7 @@
 
 #---- Importation ---#
 
-import ConfigParser,mimetypes,argparse
+import ConfigParser,mimetypes,argparse,time
 import sys,os,shutil
 
 #------ Ajouts ------#
@@ -46,7 +46,7 @@ execfile(os.path.join(CURRENT_DIR,'Modules/functions.py'))
 
 FUNCTIONS={'':move,'!':delete,':':copy}
 
-INFOS={'type':TYPE,'name':NAME,'size':SIZE,'extention':EXT,'ext':EXT}
+INFOS={'type':TYPE,'name':NAME,'size':SIZE,'extention':EXT,'ext':EXT,'date':TIME}
 
 PATTERNS={'is':IS,'is_not':IS_NOT,
 'contains':CONTAINS,'contains_not':CONTAINS_NOT,
@@ -95,11 +95,20 @@ def exec_conf(config):
 			else: t_action=''
 		
 			for f in files:
+				src=get_dir(f,section)
+				if os.path.isdir(src): continue 
+				# No recurtion for now
 				try:
-					if seek(value.lower(),str(infos(get_dir(f,section))).lower()):
+					temp_infos=infos(src)
+					value=guess_type(temp_infos,value)
+							
+					if seek(value,temp_infos):
 						FUNCTIONS[t_action](f,action,section)
+				except ValueError:
+					print "Time ill Formated, Format is 'Day Month Year, Hour Minute Second'",sys.exc_info()
+					break
 				except:
-					print "Unexpected error:", sys.exc_info(), sys.exit()
+					print "Unexpected error:",sys.exc_info(), sys.exit()
 
 #######################
 #---- Main Program ---#
