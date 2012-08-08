@@ -4,7 +4,7 @@
 # Date: 2012                              #
 # Auteur: Malphaet                        #
 # Nom: fileSort                           #
-# Version: 0.2a                           #
+# Version: 0.3a                           #
 # Copyright 2011: Malphaet                #
 ###########################################
 # This file is part of fileSort.
