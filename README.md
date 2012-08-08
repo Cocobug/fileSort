@@ -10,12 +10,41 @@ Sorting files according to some rules
 
 MANUAL
 ========
+usage: fileSort.py [-h] [-v] [-f] config [config ...]
+
+Read a config file and apply it's rules
+
+positional arguments:
+  config         a config file to apply
+
+optional arguments:
+  -h, --help     show this help message and exit
+  -v, --verbose  be verbose
+  -f, --force    overwrite destination data
 
 Configure
 ----------
 ### How to configure ###
-> Yet to be added
-* Everything
+
+#### Syntax ####
+Rules are stored in config files (ini style).
+[/Folder/To/Be/Sorted]
+> The section is the folder in witch the rules will take place
+
+The rules are formated this way
+> attribute.operator(value)
+> * The Attribute is the field according to whom the value is gonna be analysed (Aka: Name, size ...)
+> * The Operator is the analyser pattern so to speak (Aka: is, contains ...)
+> * The Value is the seeked value.
+
+Then comes the Action part
+> Next to the equal sign, is put the action type marker.
+> * ':' means Copy to destination
+> * '!' means Delete the file
+> * Left void means move to destination
+
+Then comes the destination part
+> The destination can either be relative to the current folder './', inherited from your main folder '~', or absolute '/'
 
 ### Actions ###
 
@@ -26,7 +55,7 @@ Configure
 > Yet to be implemented
 * Archive
 
-### Patterns ###
+### Operator ###
 
 * is
 * is_not
@@ -38,17 +67,15 @@ Configure
 * less
 
 > Yet to be implemented
-* Recognition of custom patterns with AND OR NOT
+* Recognition of custom patterns with AND, OR, NOT
 
 
-### Known Fields ###
+### Attribute ###
 
 * Name : The name of the file (Case insensitive)
 * Type : The type of the file (Case insensitive). See mimetypes for more details.
 * Size : The size of the file (Octal)
 * Extention (or ext): The extention of the file (with the '.' dot)
-
-> Yet to be implemented
 * Date : The date of creation of the file
 
 ### Mimetypes ###
@@ -119,23 +146,19 @@ TODO
 Urgent
 --------
 
-
 Important
 ---------
-* Series of rules (AND, OR)
 * Clever recognitions (Aka: $date$, $rand$)
 
 Alpha-Test
 ---------
 * Regular expression understanding
 * Recurtion in sub-folders
+* Series of rules (AND, OR)
 
 Cosmetic
 ---------
 * For python 2.6 users: Argparse inexistent, shutils inexistant (Arrr)
-
-* Add the help to Manual
-* Give some details on how to conf in Manual
 
 Done (In theory)
 --------
